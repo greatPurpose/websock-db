@@ -1,0 +1,64 @@
+./cup ../cup4/*roc*
+ sh mkcup.sh
+
+./apost
+./ping
+sh mkdc.sh
+ sh mk.sh
+sh -x mkapost.sh
+sh -x mkareg.sh
+./s1.sh
+sudo ldconfig /opt/orcadt/dc/lib/
+
+./areg
+sh mkt0.sh
+sudo shutdown 0
+cp .ssh/sam-dev-server-key.pub /tmp
+ sh t0.sh
+ sh mkt0.sh
+sudo apt-get install libgflags-dev
+/opt/orcadt/dc/mysql/bin/mysql -P 7704 -h 127.0.0.1 -u root 
+ ./mysql.sh
+use dc
+ ./mkdc 4 1
+ sh mystart.sh
+/opt/orcadt/dc/mysql/bin/mysqld_multi --defaults-file=/etc/mysql_multi.cnf -p my_passwd start 0
+sam@bill-dev:~/dc4/core$ echo $PATH
+/opt/orcadt/dc/mysql/bin:/opt/orcadt/dc/mysql/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+sam@bill-dev:~/dc4/core$ 
+/opt/orcadt/dc/mysql/bin/mysql -P 7704 -h 127.0.0.1 -u root 
+sam@bill-dev:~/dc4/core$ /opt/orcadt/dc/mysql/bin/mysqld_multi --defaults-file=/etc/mysql_multi.cnf -p my_passwd start 0
+./mkdc 0 1
+sam@bill-dev:~/dc4/core$ export LD_LIBRARY_PATH=/opt/orcadt/dc/mysql/lib
+ sh t4.sh
+ssh-keygen -C 'Sam Bigger Public Key' -b 4096 -f ~/.ssh/sam-dev-server-key
+
+mysql> use dc;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> select * from dc;
++------+-------+-------+--------+---------------------+-------+---------------------+---------+-------+-------+------+--------+---------+-----------------------+---------+
+| op16 | cla16 | clb16 | tick16 | cab64               | ref64 | id64                | stamp64 | cab32 | ref32 | id32 | tick32 | etick32 | str256                | jstr60k |
++------+-------+-------+--------+---------------------+-------+---------------------+---------+-------+-------+------+--------+---------+-----------------------+---------+
+|    1 |     0 |     0 |      0 | 1441714830712045568 |     0 |                   0 |       0 |     0 |     0 |    0 |      0 |       0 |                       |         |
+|    2 |     0 |     0 |      0 | 1441714830711980032 |     0 |                   0 |       0 |     0 |     0 |    0 |      0 |       0 | tcp://127.0.0.1:50000 |         |
+|    2 |     0 |     0 |      0 | 1441714830711980033 |     0 |                   0 |       0 |     0 |     0 |    0 |      0 |       0 | tcp://127.0.0.1:50001 |         |
+|    2 |     0 |     0 |      0 | 1441714830711980034 |     0 |                   0 |       0 |     0 |     0 |    0 |      0 |       0 | tcp://127.0.0.1:50002 |         |
+|    4 |     0 |     0 |      0 | 1441714830712045568 |     0 |                   0 |       0 |     0 |     0 |    0 |      0 |       0 |                       |         |
+|    5 |     0 |     0 |      0 | 1441714830712045568 |     0 | 1441714830711980032 |       0 |     0 |     0 |    0 |      0 |       0 |                       |         |
+|    5 |     4 |     0 |      0 | 1441714830712045568 |     0 | 1441714830711980033 |       0 |     1 |     0 |    0 |      0 |       0 |                       |         |
+|    5 |     8 |     0 |      0 | 1441714830712045568 |     0 | 1441714830711980034 |       0 |     2 |     0 |    0 |      0 |       0 |                       |         |
++------+-------+-------+--------+---------------------+-------+---------------------+---------+-------+-------+------+--------+---------+-----------------------+---------+
+8 rows in set (0.00 sec)
+
+mysql> 
+mysql> delete from dc where cab64=1441714830731706370;
+
+
+
+
+
+
+
