@@ -16,72 +16,44 @@ using json = nlohmann::json;
 
 char router[30];
 char *g_routerip = router;
-int offset=OFFSET_DCOP_CUP; 
+int offset = OFFSET_DCOP_CUP;
 
 int g_libslot = 0;
 uint16_t g_port;
 char *g_serverip = (char *)"tcp://127.0.0.1:50000";
 //char *g_routerip = (char *)"tcp://*:50301";
-uint64_t g_servernid = 0, g_mynid = 64 *  1024 + OFFSET_DCOP_CUP;
-void*dcl = NULL;
-int toSendCloud(char* recbuf);
+uint64_t g_servernid = 0, g_mynid = 64 * 1024 + OFFSET_DCOP_CUP;
+void *dcl = NULL;
+int toSendCloud(char *recbuf);
 
 static int callback_http(struct lws *wsi,
                          enum lws_callback_reasons reason, void *user,
                          void *in, size_t len)
 {
-	return 0;
+  return 0;
 }
 
 static int callback_dumb_increment(struct lws *wsi,
                                    enum lws_callback_reasons reason,
                                    void *user, void *in, size_t len)
 {
-    
-    switch (reason) {
-        case LWS_CALLBACK_ESTABLISHED: // just log message that someone is connecting
-            printf("connection established\n");
-            break;
-        case LWS_CALLBACK_RECEIVE: { // the funny part
-            // create a buffer to hold our response
-            // it has to have some pre and post padding. You don't need to care
-            // what comes there, lwss will do everything for you. For more info see
-            // http://git.warmcat.com/cgi-bin/cgit/lwss/tree/lib/lwss.h#n597
-            //unsigned char *buf = (unsigned char*) malloc(LWS_SEND_BUFFER_PRE_PADDING + len +
-            //                                             LWS_SEND_BUFFER_POST_PADDING);
 
-            //int i;
+  switch (reason)
+  {
+  case LWS_CALLBACK_ESTABLISHED: // just log message that someone is connecting
+    printf("connection established\n");
+    break;
+  case LWS_CALLBACK_RECEIVE:
+  { 
+    char *tmp = "{ \"dcpref\": { \"cab64s\": \"2-20-9-0-101-9\", \"op\": 22, \"jser\":1}, \"items\": [{\"dck\": { \"op16\": 9,  \"cla\":101, \"clb\": 1, \"cab64s\": \"2-20-9-0-101-9\", \"cab32s\": \"1-1-0-64-0\" },\"dcv\": {\"geo\": [31.3, 108.4],\"segs\": [{\"idx\": 1,  \"typ\": 1, \"flow\":1, \"restrict\":48, \"smin\":70, \"smax\":90, \"lpaint\": 1, \"rpaint\":2},{\"idx\": 2,  \"typ\": 1, \"flow\":1, \"restrict\":48, \"smin\":60, \"smax\":80, \"lpaint\": 2, \"rpaint\":3}]}},{ \"dck\": { \"op16\": 9,  \"cla\":101, \"clb\": 3, \"cab64s\": \"2-20-9-0-101-9\", \"cab32s\": \"1-1-0-64-0\" },\"dcv\": {\"paint\": [{ \"idx\": 1, \"clr\": 0 , \"width\": 1, \"dashed\": 0, \"pts\":[ [103, 0, 5], [103, 0, 3895] ]},{ \"idx\": 2, \"clr\": 0 , \"width\": 1, \"dashed\": 0, \"pts\": [ [403, 0, 5], [403, 0, 3895] ]},{ \"idx\": 3, \"clr\": 0 , \"width\": 1, \"dashed\": 0, \"pts\":[ [703, 0, 5], [703, 0, 3895] ]}]}}]}";
+    toSendCloud(tmp); //((char*)in);    
+    break;
+  }
+  default:
+    break;
+  }
 
-            // pointer to `void *in` holds the incomming request
-            // we're just going to put it in reverse order and put it in `buf` with
-            // correct offset. `len` holds length of the request.
-           // for (i=0; i < len; i++) {
-           //     buf[LWS_SEND_BUFFER_PRE_PADDING + (len - 1) - i ] = ((char *) in)[i];
-           // }
-
-            // log what we recieved and what we're going to send as a response.
-            // that disco syntax `%.*s` is used to print just a part of our buffer
-            // http://stackoverflow.com/questions/5189071/print-part-of-char-array
-            //printf("received data: %s, replying: %.*s\n", (char *) in, (int) len,
-            //       buf + LWS_SEND_BUFFER_PRE_PADDING);
-
-            // send response
-            // just notice that we have to tell where exactly our response starts. That's
-            // why there's `buf[LWS_SEND_BUFFER_PRE_PADDING]` and how long it is.
-            // we know that our response has the same length as request because
-            // it's the same message in reverse order.
-            //lws_write(wsi, &buf[LWS_SEND_BUFFER_PRE_PADDING], len, LWS_WRITE_TEXT);
-            
-            toSendCloud((char*)in);
-            // release memory back into the wild
-            //free(buf);
-            break;
-        }
-        default:
-            break;
-    }
-
-    return 0;
+  return 0;
 }
 
 static struct lws_protocols protocols[] = {
@@ -97,88 +69,81 @@ static struct lws_protocols protocols[] = {
         0                          // we don't use any per session data
     },
     {
-        NULL, NULL, 0   /* End of list */
-    }
-};
+        NULL, NULL, 0 /* End of list */
+    }};
 
+int toSendCloud(char *recbuf)
+{
+  char buf[sizeof(dcpref_t) + DCCUP_MAX + 1024];
+  dckmycdn_t *k;
+  dcpref_t *pref;
+  dcslice_t *slice;
+  char *dcv;
 
-int toSendCloud(char* recbuf)
-{ 
-    json jn= json::parse(std::string(recbuf));
-    for (json::iterator it = jn.begin(); it != jn.end(); ++it) {
-        std::cout << it.key() << " : " << it.value() << "\n";
-    }
-    
+  json j = json::parse(recbuf);
 
+  memset((void *)buf, 0, sizeof(dcpref_t) + sizeof(dcslice_t) + sizeof(dckmycdn_t));
+  char *cp = buf;
+  pref = (dcpref_t *)cp;
+  cp += sizeof(dcpref_t);
+  pref->op = (uint16_t)j["dcpref"]["op"].get<short>();
+  std::string s1 = j["dcpref"]["cab64s"].get<std::string>();
+  const char *cstr1 = (const char *)s1.c_str();
+  dclcab_t lcab1;
+  dclCabExpand(&lcab1, (char *)cstr1);
+  pref->stamp = lcab1.cab64;
+  fprintf(stderr, "pref op stamp %d %ld\n", (int)(pref->op), pref->stamp);
+  int vtot = 0;
+  for (auto &elem : j["items"])
+  {
+    slice = (dcslice_t *)cp;
+    cp += sizeof(dcslice_t);
+    k = (dckmycdn_t *)cp;
+    int kslen = 0;
+    k->op16 = (uint16_t)elem["dck"]["op16"].get<short>();
+    k->cla16 = (uint16_t)elem["dck"]["cla"].get<short>();
+    k->clb16 = (uint16_t)elem["dck"]["clb"].get<short>();
+    s1 = elem["dck"]["cab64s"].get<std::string>();
+    cstr1 = (const char *)s1.c_str();
+    dclCabExpand(&lcab1, (char *)cstr1);
+    k->cab64 = lcab1.cab64;
+    s1 = elem["dck"]["cab32s"].get<std::string>();
+    cstr1 = (const char *)s1.c_str();
+    dclCab32Expand(&lcab1, (char *)cstr1);
+    k->cab32 = lcab1.cab32;
+    slice->klen = sizeof(dckmycdn_t);
+    cp += sizeof(dckmycdn_t);
+    std::string s2 = elem["dcv"].dump();
+    const char *cstr2 = s2.c_str();
+    int vlen = strlen(cstr2) + 1;
+    slice->vlen = vlen;
+    strcpy(cp, cstr2);
+    cp += vlen;
+    vtot += slice->klen + slice->vlen + sizeof(dcslice_t);
+    fprintf(stderr, "vlen %d v: %s\n", vlen, cstr2);
+    fprintf(stderr, "slice %d %d\n", slice->klen, slice->vlen);
+  }
+  pref->len = vtot;
 
-    char obuf[sizeof(dcpref_t) + DCCUP_MAX + 1024];
-    dcpref_t *pref = (dcpref_t *)obuf;
-    char *vbuf = &obuf[sizeof(dcpref_t)];
-    char *ebuf = vbuf + DCCUP_MAX;
-    int tlen, nsheet, sind, rmin, rmax, rind, i;
-    char cellnm[64];
-    dclcab_t lcab;
-    dclnid_t nidcab;
-    uint64_t cab64 = 0, ref64 = 0;
-    uint32_t cab32 = 0;
-    int mapop = 0;
-    uint32_t cla16 = 0;
-
-    
-   
-      tlen = 0;
-      char *cp = (char *)pref + sizeof(dcpref_t);
-      
-        const char *cstr256 = (const char *)recbuf;
-        fprintf(stderr, "cstr256 %s\n", cstr256);
-        int len256 = (int)strlen(cstr256);
-        int klen = len256 + sizeof(dckmycdn_t);
-        int vlen = 0;
-        if ((tlen + klen + vlen + sizeof(dcslice_t)) > DCCUP_MAX) {
-          fprintf(stderr, "sheet %d longer than %d\n", i, DCCUP_MAX);
-          return 0;
-        }
-        if (mapop == DCKOP_NID) {
-          fprintf(stderr, "ip %s\n", cstr256);
-        }
-
-        dcslice_t *slice = (dcslice_t *)cp;
-        cp += sizeof(dcslice_t);
-        slice->klen = klen;
-        slice->vlen = vlen;
-        dckmycdn_t *k = (dckmycdn_t *)cp;
-        cp += klen;
-        memset((void *)k, 0, sizeof(dckmycdn_t));
-        strcpy(k->str256, cstr256);
-        k->op16 = mapop;
-        k->cab64 = cab64;
-        k->ref64 = ref64;
-        k->cla16 = cla16;
-        k->cab32 = cab32;
-        tlen += sizeof(dcslice_t) + klen + vlen;
-        fprintf(stderr, "klen vlen tlen %d %d %d\n", klen, vlen, tlen);
-         
-    dclop_t *op = dclGetop(dcl);
-    memset((void *)pref, 0, sizeof(dcpref_t));
-    pref->op = DCOP_CUP;
-    pref->len = tlen;
-    op->p = obuf;
-    op->plen = tlen + sizeof(dcpref_t);
-    dclSendop(dcl, op);
-    if (op->ret) {
-    //fprintf(stderr, "update sheet %d failed - check and try\n", g_sheet);
-     return 0;
-    }
-    dclFreeop(dcl, op);
-    return 1;
+  dclop_t *op = dclGetop(dcl);
+  op->p = buf;
+  op->plen = vtot;
+  dclSendop(dcl, op);
+  if (op->ret)
+  {
+    return 0;
+  }
+  dclFreeop(dcl, op);
+  return 1;
 }
 
-int main(void) {
-    // server url will be http://localhost:9000
-    int port = 9000;
-    struct lws_context *context;
-    struct lws_context_creation_info context_info;
-    /*
+int main(void)
+{
+  // server url will be http://localhost:9000
+  int port = 9000;
+  struct lws_context *context;
+  struct lws_context_creation_info context_info;
+  /*
     struct lws_context_creation_info context_info =
     {
         .port = port, .iface = NULL, .protocols = protocols, .extensions = NULL,
@@ -186,55 +151,55 @@ int main(void) {
         .gid = -1, .uid = -1, .options = 0, NULL, .ka_time = 0, .ka_probes = 0, .ka_interval = 0
     };
     */
-    memset((void *)&context_info, 0, sizeof(context_info));
-    context_info.port = port;
-    context_info.protocols = protocols;
-    context_info.gid = -1;
-    context_info.uid = -1;
+  memset((void *)&context_info, 0, sizeof(context_info));
+  context_info.port = port;
+  context_info.protocols = protocols;
+  context_info.gid = -1;
+  context_info.uid = -1;
 
-    // create lws context representing this server
-    context = lws_create_context(&context_info);
+  // create lws context representing this server
+  context = lws_create_context(&context_info);
 
-    if (context == NULL) {
-        fprintf(stderr, "lws init failed\n");
-        return -1;
-    }
+  if (context == NULL)
+  {
+    fprintf(stderr, "lws init failed\n");
+    return -1;
+  }
 
-    printf("starting web server...\n");
+  printf("starting web server...\n");
 
-    char *es = getenv("DC_NIDSLOT");
-    if (es) sscanf(es, "%d", &g_libslot);
-    g_port = DCPORT_CUP + g_libslot * DCPORT_ADJ;
+  char *es = getenv("DC_NIDSLOT");
+  if (es)
+    sscanf(es, "%d", &g_libslot);
+  g_port = DCPORT_CUP + g_libslot * DCPORT_ADJ;
 
-    if (offset <= 9)
-        sprintf(g_routerip,"tcp://*:5030%d", offset);
-    else if (offset <= 99)
-        sprintf(g_routerip,"tcp://*:503%d", offset);
-    else if (offset >=100){
-        offset += 300;
-        sprintf(g_routerip,"tcp://*:50%d", offset);
-        printf("\n\noffset > 99 if ERROR probably need more nids added to core\n\n");
-    }
-    printf("\n offset=%d g_routerip=%s\n",  offset, g_routerip);
+  if (offset <= 9)
+    sprintf(g_routerip, "tcp://*:5030%d", offset);
+  else if (offset <= 99)
+    sprintf(g_routerip, "tcp://*:503%d", offset);
+  else if (offset >= 100)
+  {
+    offset += 300;
+    sprintf(g_routerip, "tcp://*:50%d", offset);
+    printf("\n\noffset > 99 if ERROR probably need more nids added to core\n\n");
+  }
+  printf("\n offset=%d g_routerip=%s\n", offset, g_routerip);
 
-    dcl = dclInit(g_serverip, g_servernid, g_mynid, g_routerip);
-    if (!dcl) {
-      printf("cannot connect to %s\n", g_serverip);
-      _exit(1);
-    }
-    printf("after dclinit\n");
+  dcl = dclInit(g_serverip, g_servernid, g_mynid, g_routerip);
+  if (!dcl)
+  {
+    printf("cannot connect to %s\n", g_serverip);
+    _exit(1);
+  }
+  printf("after dclinit\n");
 
+  // infinite loop, to end this server send SIGTERM. (CTRL+C)
+  while (true)
+  {
+    lws_service(context, 50);    
+  }
 
-    // infinite loop, to end this server send SIGTERM. (CTRL+C)
-    while (true) {
-        lws_service(context, 50);
-        // lws_service will process all waiting events with their
-        // callback functions and then wait 50 ms.
-        // (this is a single threaded webserver and this will keep our server
-        // from generating load while there are not requests to process)
-    }
+  lws_context_destroy(context);
 
-    lws_context_destroy(context);
-
-    return 0;
+  return 0;
 }

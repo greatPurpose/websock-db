@@ -82,6 +82,12 @@ void dclCabExpand(dclcab_t *lcab, char *scab) {
 			#endif
 }
 
+	void dclCab32Expand(dclcab_t *lcab, char *scab) {
+	  memset ((void *)lcab, 0, sizeof(dclcab_t));
+		lcab->nset = sscanf(scab, "%u_%u_%u_%u", &lcab->z, &lcab->a, &lcab->f, &lcab->c);
+		lcab->cab32 = ((lcab->z) << 24) + ((lcab->a) << 16) + ((lcab->f) << 8) + lcab->c;
+	}
+
 #if 0
 void dclNidExpand(dclnid_t *lnid, char *snid) {
     memset ((void *)lnid, 0, sizeof(dclnid_t));

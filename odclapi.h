@@ -84,6 +84,7 @@ void dclFreeop(void *dcl, dclop_t *op);
 void dclFreeMsg(dclmsg_t *msg);
 dclop_t *dclGetop(void *dcl);
 void dclCabExpand(dclcab_t *lcab, char *scab);
+void dclCab32Expand(dclcab_t *lcab, char *scab);
 void dclNidExpand(dclnid_t *lnid, char *snid);
 std::string dclTrim(const std::string& s);
 #endif
